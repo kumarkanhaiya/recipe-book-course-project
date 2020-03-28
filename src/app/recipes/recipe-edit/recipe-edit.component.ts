@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
-import { FormGroup, FormControl, FormArray } from '@angular/forms';
+import { FormGroup, FormControl, FormArray, Validators } from '@angular/forms';
 
 import { RecipeService } from '../recipe.service';
 import { Recipe } from '../recipe.model';
@@ -34,11 +34,27 @@ export class RecipeEditComponent implements OnInit {
     console.log(this.recipeForm);
   }
 
+  onAddIngredient() {
+    (<FormArray>this.recipeForm.get('ingredients')).push(
+      new FormGroup({
+        'name': new FormControl(null, Validators.required),
+        'amount': new FormControl(null, [
+          Validators.required,
+          Validators.pattern(/^[1-9]+[0-9]*$/)
+        ])
+      })
+    );
+  }
+
+  onRemoveIngredient(i: number) {
+    (<FormArray>this.recipeForm.get('ingredients')).controls.splice(i, 1);
+  }
+
   private initializeForm() {
     let recipeName = '';
     let recipeDescription = '';
     let recipeImagePath = '';
-    let recipeIngredients = new FormArray([]);
+    const recipeIngredients = new FormArray([]);
 
     if (this.editMode) {
       const recipe = this.recipeService.getRecipe(this.id);
@@ -47,19 +63,22 @@ export class RecipeEditComponent implements OnInit {
       recipeImagePath = recipe.imagePath;
 
       if (recipe['ingredients']) {
-        for (let ingredient of recipe.ingredients) {
+        for (const ingredient of recipe.ingredients) {
           recipeIngredients.push(new FormGroup({
-            'name': new FormControl(ingredient.name),
-            'amount': new FormControl(ingredient.amount)
+            'name': new FormControl(ingredient.name, Validators.required),
+            'amount': new FormControl(ingredient.amount, [
+              Validators.required,
+              Validators.pattern(/^[1-9]+[0-9]*$/)
+            ])
           }));
         }
       }
     }
 
     this.recipeForm = new FormGroup({
-      'name': new FormControl(recipeName),
-      'description': new FormControl(recipeDescription),
-      'imagePath': new FormControl(recipeImagePath),
+      'name': new FormControl(recipeName, Validators.required),
+      'description': new FormControl(recipeDescription, Validators.required),
+      'imagePath': new FormControl(recipeImagePath, Validators.required),
       'ingredients': recipeIngredients
     });
   }
